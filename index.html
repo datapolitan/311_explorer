@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>311 Explorer</title>
+    <meta charset="utf-8" />
+    <meta property="og:image" content="images/fbimage.png"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script>
+        $( function() {
+            $( "#startdate" ).datepicker({
+                  dateFormat: "yy-mm-dd"
+                });
+            $( "#enddate" ).datepicker({
+                  dateFormat: "yy-mm-dd"
+                });
+        } );
+    </script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <style>
+        .bar {
+          fill: steelblue;
+        }
+
+        .bar:hover {
+          fill: brown;
+        }
+
+        .axis--x path {
+          display: none;
+        }
+
+        </style>
+  <head>
+  <body>
+
+<div>
+    <p>Start date: <input type="text" id="startdate"></p>
+    <p>End date: <input type="text" id="enddate"></p>
+    <input type="text" id="cbboard">Community Board</input><br>
+    <button onclick="get_data()">Submit</button><br>
+</div>
+<div id="chart" align='right'>
+    <svg width="960" height="500"></svg>
+</div>
+
+    <script type="text/javascript">
+    
+        function get_data(){
+            var userInput = document.getElementById("startdate").value;
+        
+        // function get_data(){
+            // var start_date = '2016-01-01T00:00:00';
+            // var end_date = '2016-03-31T23:59:59';
+            // var cb_board = '01%20MANHATTAN';
+            var startDate = document.getElementById("startdate").value;
+            var endDate = document.getElementById("enddate").value;
+            var cbBoard = document.getElementById("cbboard").value;
+            var url = 'https://data.cityofnewyork.us/resource/fhrw-4uyv.json?$select=complaint_type,count(unique_key)&$group=complaint_type&$where=community_board%20=%20%27' + cbBoard + '%27%20AND%20created_date%20between%20%27' +  startDate + '%27%20and%20%27' + endDate + '%27&$order=count(unique_key)%20DESC&$limit=10';
+    
+            // console.log(url);
+            $.getJSON(
+                url, 
+                function(data) {
+                    // var width = 262,
+                    //     height = 200;
+                var svg = d3.select("svg"),
+                    margin = {top: 20, right: 20, bottom: 30, left: 40},
+                    width = +svg.attr("width") - margin.left - margin.right,
+                    height = +svg.attr("height") - margin.top - margin.bottom;
+
+                var x = d3.scaleBand().rangeRound([0, width]).padding(0.1),
+                    y = d3.scaleLinear().rangeRound([height, 0]);
+
+                var g = svg.append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+                  x.domain(data.map(function(d) { return d.complaint_type; }));
+                  y.domain([0, d3.max(data, function(d) { return d.count_unique_key; })]);
+
+                  g.append("g")
+                      .attr("class", "axis axis--x")
+                      .attr("transform", "translate(0," + height + ")")
+                      .call(d3.axisBottom(x));
+
+                  g.append("g")
+                      .attr("class", "axis axis--y")
+                      // .call(d3.axisLeft(y).ticks(10))
+                    .append("text")
+                      .attr("transform", "rotate(-90)")
+                      .attr("y", 6)
+                      .attr("dy", "0.71em")
+                      .attr("text-anchor", "end")
+                      .text("Count of Complaints");
+
+                  g.selectAll(".bar")
+                    .data(data)
+                    .enter().append("rect")
+                      .attr("class", "bar")
+                      .attr("x", function(d) { return x(d.complaint_type); })
+                      .attr("y", function(d) { return y(d.count_unique_key); })
+                      .attr("width", x.bandwidth())
+                      .attr("height", function(d) { return height - y(d.count_unique_key); });
+                // console.log(data);
+                }//end function
+            );
+        }; //end function test
+    </script>
+
+
+
+  </body>
+</html> 
